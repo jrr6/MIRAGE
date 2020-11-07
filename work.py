@@ -1,31 +1,65 @@
 from cmu_112_graphics import *
-from image import fetchTestImage
+from image_analyzer import getImageData
 from midiutil import MIDIFile
 from midi2audio import FluidSynth
 import _thread as thread
+import time
 
 
 def appStarted(app):
-    app.L = fetchTestImage()[1]
-    app.tonic = "B"
-    app.tonality = "Major"
-    app.tempo = 20
+    data = getImageData()
+    app.timerDelay = 100
+    app.L = data['edges']
+    app.beginTime = 0
+    app.tonic = data['tonic']
+    app.tonality = "Major" if data['major'] else "Minor"
+    app.lineX = 0
+    app.tempo = data['tempo']
     app.numBeats = 4
-    app.chordProgression = ["I", "vi", "V", "IV", "ii", "viio", "I"]
+    app.moveLine = False
+    app.chordProgression = data['chords']
     app.tonicRow = findTonicRow(app)
     app.rectangleHeight =  int(len(app.L)/96)
     app.standardRectangleWidth = int(app.width/100)
     app.tonicDict = {"C":24, "C#":25, "D":26, "D#":27, "E":28, "F":29, "F#":30, "G":31, "G#":32, "A":33, "A#":34, "B":35}
-    app.majorChordDict = {"I":[4, 3, 5, 0], "ii":[3, 4, 5, 2], "iii":[3, 4, 5, 4], "IV":[4, 3, 5, 5], "V":[4, 3, 5, 7], "vi":[3, 4, 5, 9], "viio":[3, 3, 6, 11]}
-    app.minorChordDict = {"i":[3, 4, 5, 0], "ii0":[3, 3, 6, 2], "III+":[4, 4, 4, 3], "iv":[3, 4, 5, 5], "V":[4, 3, 5, 7], "VI":[4, 3, 5, 8], "viio":[3, 3, 6, 11]}
+    app.majorChordDict = {"I":[4, 3, 5, 0], "i":[3, 4, 5, 0], "iio":[3, 3, 6, 2],"ii":[3, 4, 5, 2], "II":[4, 3, 5, 2], "III+":[4, 4, 4, 4],"iii":[3, 4, 5, 4], "III":[5, 4, 5, 4], "IV":[4, 3, 5, 5], "iv":[3, 4, 5, 5], "V":[4, 3, 5, 7], "v":[3, 4, 5, 7], "vi":[3, 4, 5, 9], "VI":[4, 3, 5, 9], "viio":[3, 3, 6, 11]}
+    app.minorChordDict = {"i":[3, 4, 5, 0],"I":[4, 3, 5, 0], "iio":[3, 3, 6, 2], "II":[4, 3, 5, 2], "ii":[3, 4, 5, 2],"III+":[4, 4, 4, 3], "iii":[3, 4, 5, 3], "III":[4, 3, 5, 3],"iv":[3, 4, 5, 5],"IV":[4, 3, 5, 5], "V":[4, 3, 5, 7],"v":[3, 4, 5, 7], "VI":[4, 3, 5, 8], "vi":[3, 4, 5, 8], "viio":[3, 3, 6, 11]} #fuck the linter
     app.currentMidi = pixelToMidi(app)
     createMidiFile(app)
-    thread.start_new_thread(playMidi, (app, 0))
- 
+    calculateLineSpeed(app)
+    app.concatenatedMidi = concatenatedMidi(app)
+    app.topMargin = app.height/5
+    app.mouseOverPlayButton = False
+    app.isPlayingAudio = False
+    app.sideMargin = (app.width - len(app.L[0]))/2
 
+
+
+
+def calculateLineSpeed(app):
+    pixelsPerBeat = len(app.L[0])/(app.numBeats)
+    pixelsPerMilisecond = ((app.tempo/60)/1000) * pixelsPerBeat
+    app.lineSpeed = 7*app.timerDelay * pixelsPerMilisecond
+ 
+#from course website
+def rgbColorString(r, g, b):
+    return f'#{r:02x}{g:02x}{b:02x}'
+
+def mouseMoved(app, event):
+    app.mouseOverPlayButton = isPositionInsidePlayButton(app, event.x, event.y)
+
+def mousePressed(app, event):
+    if not app.isPlayingAudio and isPositionInsidePlayButton(app, event.x, event.y):
+        app.isPlayingAudio = True
+        app.beginTime = time.time()
+        thread.start_new_thread(playMidi, (app, 0))
 
 def timerFired(app):
-    pass
+    if app.isPlayingAudio:
+        app.lineX += app.lineSpeed
+    if app.lineX > app.width - app.sideMargin:
+        app.lineX = 0
+        app.isPlayingAudio = False
 
 def pixelToMidi(app):
     midiRectangles = []
@@ -52,12 +86,49 @@ def pixelToMidi(app):
         chordProgressionIndex = 0
     return midiRectangles
 
+def isPositionInsidePlayButton(app, x, y):
+    halfWidth = app.width/22
+    halfHeight = app.height/30
+    topLeftX = app.width/2 - halfWidth
+    topLeftY = app.height - (app.height - app.topMargin - len(app.L))/2 - halfHeight
+    bottomRightX = app.width/2 + halfWidth
+    bottomRightY = app.height - (app.height - app.topMargin - len(app.L))/2 + halfHeight
+    if x >= topLeftX and x <= bottomRightX and y >= topLeftY and y <= bottomRightY:
+        return True
+    return False
 
+def drawPlayButton(app, canvas):
+    halfWidth = app.width/22
+    halfHeight = app.height/30
+    topLeftX = app.width/2 - halfWidth
+    topLeftY = app.height - (app.height - app.topMargin - len(app.L))/2 - halfHeight
+    bottomRightX = app.width/2 + halfWidth
+    bottomRightY = app.height - (app.height - app.topMargin - len(app.L))/2 + halfHeight
+    color = "limegreen"
+    if app.mouseOverPlayButton:
+        color = "green"
+    if app.isPlayingAudio:
+        color = "gray"
+    canvas.create_rectangle(topLeftX, topLeftY, bottomRightX, bottomRightY, fill = color)
+
+
+def drawTriangleAbovePlayButton(app, canvas):
+    halfWidth = app.width/33
+    halfHeight = app.height/40
+    topLeftX = app.width/2 - halfWidth
+    topLeftY = app.height - (app.height - app.topMargin - len(app.L))/2 - halfHeight
+    bottomRightX = app.width/2 + halfWidth
+    bottomRightY = app.height - (app.height - app.topMargin - len(app.L))/2 + halfHeight
+    
+    margin = halfWidth/2
+    topMargin = halfHeight/5
+
+    canvas.create_polygon(topLeftX + margin,topLeftY + topMargin, topLeftX + margin, topLeftY + 2*halfHeight - topMargin, topLeftX + 2*halfWidth - margin/2, bottomRightY - halfHeight, fill = "gray" )
 
 def drawMarkerAndPiano(app, canvas):
     row = app.tonicRow
     tonic = app.tonic
-    canvas.create_text(app.width/10, row, text = tonic, fill = "pink", font = "Arial 11 bold")
+    
 
 def concatenatedMidi(app):
     concatenatedMidi = []
@@ -95,7 +166,6 @@ def rowNumToMidiNoteNum(app, rowNum):
 
 def playMidi(app, bogus):
     FluidSynth().play_midi('ourMidi.mid')
-    print("played midi")
 
 def rowNumToMidiNoteNum(app, rowNum):
     shiftFactor = (app.tonicRow - app.tonicDict[app.tonic]) % 12
@@ -145,22 +215,33 @@ def createMidiFile(app):
     
 
 def drawMidi(canvas, app):
+    extent = 7
+    canvas.create_rectangle(0, 0, app.width, app.height, fill = rgbColorString(50, 50, 50))
+    canvas.create_rectangle(0, app.topMargin - extent, app.width, app.topMargin + len(app.L) + extent, fill = "black")
+    
     for row in range(len(app.currentMidi)):
         for box in app.currentMidi[row]:
             if not box[2]:
-                canvas.create_rectangle(box[0], box[1], box[0] + app.standardRectangleWidth, box[1] + app.rectangleHeight, fill = "gray")
-    midiToDraw = concatenatedMidi(app)
+                canvas.create_rectangle(box[0] + app.sideMargin, box[1] + app.topMargin, box[0] + app.standardRectangleWidth + app.sideMargin, box[1] + app.rectangleHeight + app.topMargin, fill = "gray")
+    midiToDraw = app.concatenatedMidi
     for midiPair in midiToDraw:
-        canvas.create_rectangle(midiPair[0], midiPair[1], midiPair[0] + midiPair[2], midiPair[1] + app.rectangleHeight, fill = "lightgreen", outline = "black")
+        canvas.create_rectangle(midiPair[0] + app.sideMargin, midiPair[1] + app.topMargin, midiPair[0] + midiPair[2] + app.sideMargin, midiPair[1] + app.rectangleHeight + app.topMargin, fill = "lightgreen", outline = "black")
 def redrawAll(app, canvas):
     drawMidi(canvas, app)
     drawMarkerAndPiano(app, canvas)
+    drawLine(app, canvas)
+    drawPlayButton(app, canvas)
+    drawTriangleAbovePlayButton(app, canvas)
+
+def drawLine(app, canvas):
+    canvas.create_line(app.lineX + app.sideMargin, app.topMargin, app.lineX + app.sideMargin, len(app.L) + app.topMargin, fill = "red", width = 2)
 
 def keyPressed(app, event):
-    pass
+    if event.key == "Space" and not app.isPlayingAudio:
+        app.isPlayingAudio = True
+        app.beginTime = time.time()
+        thread.start_new_thread(playMidi, (app, 0))
 
-def mousePressed(app, event):
-    pass
 
 
 def getNotesInChord(app, chord):
@@ -195,7 +276,7 @@ def isNoteInScale(app, midiNoteNumber):
 def midiRectangleIntersect(app, x, y):
     for row in range(y, y + app.rectangleHeight):
         for col in range(x, x + app.standardRectangleWidth):
-            if app.L[row][col]:
+            if col < len(app.L[0]) and row < len(app.L) and app.L[row][col]:
                 return True
     return False
 
