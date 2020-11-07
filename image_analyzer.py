@@ -1,14 +1,12 @@
-import math
-import colour
-
 import numpy as np
 import cv2
 from matplotlib import pyplot as plt
 import numpy as np
 from colortemp import tempFromRGB
 import colorsys
-import tkinter as tk
 from tkinter import filedialog
+import threading
+
 
 # imgray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
 # # ret, thresh = cv2.threshold(imgray, 50, 255, 0)
@@ -29,9 +27,8 @@ from tkinter import filedialog
 
 # https://docs.opencv.org/4.5.0/d4/d73/tutorial_py_contours_begin.html
 
-def getImageData():
-    filename = filedialog.askopenfile()
-    im = cv2.imread(filename.name)
+def getImageData(image_path):
+    im = cv2.imread(image_path)
 
     new_width = 400
     height = int(new_width / im.shape[1] * im.shape[0])
@@ -42,20 +39,21 @@ def getImageData():
     kernel = np.ones((4,4), np.float32) / 16
     blurred = cv2.filter2D(gray, -1, kernel)
     # blurred = cv2.GaussianBlur(gray, (3, 3), 0)
+    # Automatic edge detection
     # https://www.pyimagesearch.com/2015/04/06/zero-parameter-automatic-canny-edge-detection-with-python-and-opencv/
-    v = np.median(im)
     # apply automatic Canny edge detection using the computed median
+    v = np.median(im)
     sigma = 0.33
     lower = int(max(0, (1.0 - sigma) * v))
     upper = int(min(255, (1.0 + sigma) * v))
-    # edges = cv2.Canny(blurred, 200, 300)
-    # edges = cv2.Canny(blurred, 50, 100)
     edges = cv2.Canny(blurred, lower, upper)
+
+    # edges = cv2.Canny(blurred, 200, 300)
 
     plt.subplot(121), plt.imshow(blurred, cmap='gray')
     plt.subplot(122), plt.imshow(edges, cmap='gray')
     plt.title('Edge Image'), plt.xticks([]), plt.yticks([])
-    # plt.show()
+    plt.show()
 
     i = 0
     while len(np.nonzero(edges[i])[0]) == 0:
@@ -159,7 +157,7 @@ def getImageData():
     return {
         'image': im,
         'edges': edges,  # array of True/False indicating edges
-        'tempo': tempo,
+        'tempo': tempo * 30,
         'tonic': tonic,
         'chords': chords,
         'major': isMajor
@@ -168,8 +166,6 @@ def getImageData():
     #     for col in row:
     #         print('*' if col else '-', end='')
     #     print()
-
-# getImageData()
 
 # plt.subplot(121),plt.imshow(im,cmap = 'gray')
 # plt.title('Original Image'), plt.xticks([]), plt.yticks([])

@@ -7,33 +7,38 @@ import time
 
 
 def appStarted(app):
-    data = getImageData()
     app.timerDelay = 100
-    app.L = data['edges']
     app.beginTime = 0
-    app.tonic = data['tonic']
-    app.tonality = "Major" if data['major'] else "Minor"
     app.lineX = 0
-    app.tempo = data['tempo']
     app.numBeats = 4
     app.moveLine = False
-    app.chordProgression = data['chords']
-    app.tonicRow = findTonicRow(app)
-    app.rectangleHeight =  int(len(app.L)/96)
-    app.standardRectangleWidth = int(app.width/100)
     app.tonicDict = {"C":24, "C#":25, "D":26, "D#":27, "E":28, "F":29, "F#":30, "G":31, "G#":32, "A":33, "A#":34, "B":35}
     app.majorChordDict = {"I":[4, 3, 5, 0], "i":[3, 4, 5, 0], "iio":[3, 3, 6, 2],"ii":[3, 4, 5, 2], "II":[4, 3, 5, 2], "III+":[4, 4, 4, 4],"iii":[3, 4, 5, 4], "III":[5, 4, 5, 4], "IV":[4, 3, 5, 5], "iv":[3, 4, 5, 5], "V":[4, 3, 5, 7], "v":[3, 4, 5, 7], "vi":[3, 4, 5, 9], "VI":[4, 3, 5, 9], "viio":[3, 3, 6, 11]}
     app.minorChordDict = {"i":[3, 4, 5, 0],"I":[4, 3, 5, 0], "iio":[3, 3, 6, 2], "II":[4, 3, 5, 2], "ii":[3, 4, 5, 2],"III+":[4, 4, 4, 3], "iii":[3, 4, 5, 3], "III":[4, 3, 5, 3],"iv":[3, 4, 5, 5],"IV":[4, 3, 5, 5], "V":[4, 3, 5, 7],"v":[3, 4, 5, 7], "VI":[4, 3, 5, 8], "vi":[3, 4, 5, 8], "viio":[3, 3, 6, 11]} #fuck the linter
+    app.topMargin = app.height/5
+    app.mouseOverPlayButton = False
+    app.isPlayingAudio = False
+    app.uploaded = False
+
+
+def onUpload(app):
+    filename = filedialog.askopenfile()
+    data = getImageData(filename.name)
+    app.L = data['edges']
+    app.sideMargin = (app.width - len(app.L[0])) / 2
+    app.tonic = data['tonic']
+    app.tonality = "Major" if data['major'] else "Minor"
+    app.tempo = data['tempo']
+    app.chordProgression = data['chords']
+    app.tonicRow = findTonicRow(app)
+    app.rectangleHeight = int(len(app.L) / 96)
+    app.standardRectangleWidth = int(app.width / 100)
     app.currentMidi = pixelToMidi(app)
     createMidiFile(app)
     calculateLineSpeed(app)
     app.concatenatedMidi = concatenatedMidi(app)
-    app.topMargin = app.height/5
-    app.mouseOverPlayButton = False
-    app.isPlayingAudio = False
-    app.sideMargin = (app.width - len(app.L[0]))/2
-
-
+    app.uploaded = True
+    print(app.currentMidi)
 
 
 def calculateLineSpeed(app):
@@ -46,20 +51,25 @@ def rgbColorString(r, g, b):
     return f'#{r:02x}{g:02x}{b:02x}'
 
 def mouseMoved(app, event):
-    app.mouseOverPlayButton = isPositionInsidePlayButton(app, event.x, event.y)
+    if app.uploaded:
+        app.mouseOverPlayButton = isPositionInsidePlayButton(app, event.x, event.y)
+    else:
+        app.mouseOverUploadButton = isPositionInsideUploadButton(app, event.x, event.y)
 
 def mousePressed(app, event):
-    if not app.isPlayingAudio and isPositionInsidePlayButton(app, event.x, event.y):
+    if not app.isPlayingAudio and app.uploaded and isPositionInsidePlayButton(app, event.x, event.y):
         app.isPlayingAudio = True
         app.beginTime = time.time()
         thread.start_new_thread(playMidi, (app, 0))
+    if not app.uploaded and isPositionInsideUploadButton(app, event.x, event.y):
+        onUpload(app)
 
 def timerFired(app):
     if app.isPlayingAudio:
         app.lineX += app.lineSpeed
-    if app.lineX > app.width - app.sideMargin:
-        app.lineX = 0
-        app.isPlayingAudio = False
+        if app.lineX > app.width - app.sideMargin:
+            app.lineX = 0
+            app.isPlayingAudio = False
 
 def pixelToMidi(app):
     midiRectangles = []
@@ -96,6 +106,10 @@ def isPositionInsidePlayButton(app, x, y):
     if x >= topLeftX and x <= bottomRightX and y >= topLeftY and y <= bottomRightY:
         return True
     return False
+
+def isPositionInsideUploadButton(app, x, y):
+    return (app.width // 2 - 100 <= x <= app.width // 2 + 100
+            and app.height // 2 - 50 <= y <= app.height // 2 + 50)
 
 def drawPlayButton(app, canvas):
     halfWidth = app.width/22
@@ -172,7 +186,7 @@ def rowNumToMidiNoteNum(app, rowNum):
     result = 24  + rowNum + shiftFactor
     return result
 
-def createMidiToTestHowWeThinkThisShitWorks(app):
+def createMidiToTest(app):
     degrees  = getNotesInChord(app, "V") # MIDI note number
     track    = 0
     channel  = 0
@@ -199,7 +213,7 @@ def createMidiFile(app):
     channel  = 0
     time = 0
     tempo    = app.tempo  # In BPM
-    volume   = 50  # 0-127, as per the MIDI standard
+    volume   = 100  # 0-127, as per the MIDI standard
 
     MyMIDI = MIDIFile(1)  # One track, defaults to format 1 (tempo track is created
                       # automatically)
@@ -226,12 +240,24 @@ def drawMidi(canvas, app):
     midiToDraw = app.concatenatedMidi
     for midiPair in midiToDraw:
         canvas.create_rectangle(midiPair[0] + app.sideMargin, midiPair[1] + app.topMargin, midiPair[0] + midiPair[2] + app.sideMargin, midiPair[1] + app.rectangleHeight + app.topMargin, fill = "lightgreen", outline = "black")
+
+def drawUploader(app, canvas):
+    buttonWidth = 100
+    canvas.create_rectangle(app.width // 2 - buttonWidth,
+                            app.height // 2 - buttonWidth / 2,
+                            app.width // 2 + buttonWidth,
+                            app.height // 2 + buttonWidth / 2, fill='blue')
+    canvas.create_text(app.width // 2, app.height // 2, text='Upload Image', font='Helvetica 16 bold', fill='white')
+
 def redrawAll(app, canvas):
-    drawMidi(canvas, app)
-    drawMarkerAndPiano(app, canvas)
-    drawLine(app, canvas)
-    drawPlayButton(app, canvas)
-    drawTriangleAbovePlayButton(app, canvas)
+    if not app.uploaded:
+        drawUploader(app, canvas)
+    else:
+        drawMidi(canvas, app)
+        drawMarkerAndPiano(app, canvas)
+        drawLine(app, canvas)
+        drawPlayButton(app, canvas)
+        drawTriangleAbovePlayButton(app, canvas)
 
 def drawLine(app, canvas):
     canvas.create_line(app.lineX + app.sideMargin, app.topMargin, app.lineX + app.sideMargin, len(app.L) + app.topMargin, fill = "red", width = 2)
@@ -270,7 +296,6 @@ def isNoteInScale(app, midiNoteNumber):
         for num in scaleNumbers:
             result.append(result[-1] + num)
     return midiNoteNumber in result
-
 
 #return True if the list is active in the box
 def midiRectangleIntersect(app, x, y):
