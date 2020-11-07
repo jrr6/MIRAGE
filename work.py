@@ -10,7 +10,7 @@ def appStarted(app):
     app.timerDelay = 100
     app.beginTime = 0
     app.lineX = 0
-    app.numBeats = 4
+    app.numBeats = 12
     app.moveLine = False
     app.tonicDict = {"C":24, "C#":25, "D":26, "D#":27, "E":28, "F":29, "F#":30, "G":31, "G#":32, "A":33, "A#":34, "B":35}
     app.majorChordDict = {"I":[4, 3, 5, 0], "i":[3, 4, 5, 0], "iio":[3, 3, 6, 2],"ii":[3, 4, 5, 2], "II":[4, 3, 5, 2], "III+":[4, 4, 4, 4],"iii":[3, 4, 5, 4], "III":[5, 4, 5, 4], "IV":[4, 3, 5, 5], "iv":[3, 4, 5, 5], "V":[4, 3, 5, 7], "v":[3, 4, 5, 7], "vi":[3, 4, 5, 9], "VI":[4, 3, 5, 9], "viio":[3, 3, 6, 11]}
@@ -67,7 +67,7 @@ def mousePressed(app, event):
 def timerFired(app):
     if app.isPlayingAudio:
         app.lineX += app.lineSpeed
-        if app.lineX > app.width - app.sideMargin:
+        if app.lineX > app.sideMargin + len(app.L):
             app.lineX = 0
             app.isPlayingAudio = False
 
@@ -92,7 +92,7 @@ def pixelToMidi(app):
                 chordProgressionIndex -= 1
             note = rowNumToMidiNoteNum(app, row)
             box = midiRectangles[row][col]
-            box[2] = (midiRectangleIntersect(app, box[0], box[1])) and ((96 + 24*2 - note) in getNotesInChord(app, app.chordProgression[chordProgressionIndex]))
+            box[2] = (midiRectangleIntersect(app, box[0], box[1])) and ((note) in getNotesInChord(app, app.chordProgression[chordProgressionIndex]))
         chordProgressionIndex = 0
     return midiRectangles
 
@@ -168,7 +168,7 @@ def concatenatedMidi(app):
     return concatenatedMidi
 
 def getPitchForY(app, yCoord):
-    row = int((len(app.L) - yCoord)/app.rectangleHeight)
+    row = int(yCoord/app.rectangleHeight)
     result = rowNumToMidiNoteNum(app, row)
     return result
 
@@ -182,6 +182,7 @@ def playMidi(app, bogus):
     FluidSynth().play_midi('ourMidi.mid')
 
 def rowNumToMidiNoteNum(app, rowNum):
+    rowNum = 96 - rowNum
     shiftFactor = (app.tonicRow - app.tonicDict[app.tonic]) % 12
     result = 24  + rowNum + shiftFactor
     return result
@@ -192,15 +193,15 @@ def createMidiToTest(app):
     channel  = 0
     time     = 0    # In beats
     duration = 1    # In beats
-    tempo    = 60   # In BPM
-    volume   = 100  # 0-127, as per the MIDI standard
+    tempo    = 20   # In BPM
+    volume   = 25  # 0-127, as per the MIDI standard
 
     MyMIDI = MIDIFile(1)  # One track, defaults to format 1 (tempo track is created
                       # automatically)
     MyMIDI.addTempo(track, time, tempo)
 
     for i, pitch in enumerate(degrees):
-      MyMIDI.addNote(track, channel, pitch, time + i, duration, volume)
+      MyMIDI.addNote(track, channel, pitch , time + i, duration, volume)
 
     with open("test.mid", "wb") as output_file:
         MyMIDI.writeFile(output_file)
@@ -213,7 +214,7 @@ def createMidiFile(app):
     channel  = 0
     time = 0
     tempo    = app.tempo  # In BPM
-    volume   = 100  # 0-127, as per the MIDI standard
+    volume   = 50  # 0-127, as per the MIDI standard
 
     MyMIDI = MIDIFile(1)  # One track, defaults to format 1 (tempo track is created
                       # automatically)
