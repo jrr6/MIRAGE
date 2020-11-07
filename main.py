@@ -1,13 +1,9 @@
+import math
+
 import numpy as np
 import cv2
 from matplotlib import pyplot as plt
-
-im = cv2.imread('test.jpg')
-
-new_width = 400
-height = int(new_width / im.shape[1] * im.shape[0])
-dim = (new_width, height)
-im = cv2.resize(im, dim, interpolation=cv2.INTER_AREA)
+import numpy as np
 
 # imgray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
 # # ret, thresh = cv2.threshold(imgray, 50, 255, 0)
@@ -27,17 +23,44 @@ im = cv2.resize(im, dim, interpolation=cv2.INTER_AREA)
 # cv2.drawContours(im, filteredContours, -1, (0,255,0), 3)
 
 # https://docs.opencv.org/4.5.0/d4/d73/tutorial_py_contours_begin.html
-kernel = np.ones((4,4), np.float32) / 16
-dst = cv2.filter2D(im, -1, kernel)
-edges = cv2.Canny(dst, 200, 300)
 
-i = 0
-while len(np.nonzero(edges[i])[0]) == 0:
-    edges = np.delete(edges, i, 0)
+def fetchTestImage():
+    im = cv2.imread('test.jpg')
 
-i = -1
-while len(np.nonzero(edges[i])[0]) == 0:
-    edges = np.delete(edges, i, 0)
+    new_width = 400
+    height = int(new_width / im.shape[1] * im.shape[0])
+    dim = (new_width, height)
+    im = cv2.resize(im, dim, interpolation=cv2.INTER_AREA)
+
+    kernel = np.ones((4,4), np.float32) / 16
+    dst = cv2.filter2D(im, -1, kernel)
+    edges = cv2.Canny(dst, 200, 300)
+
+    i = 0
+    while len(np.nonzero(edges[i])[0]) == 0:
+        edges = np.delete(edges, i, 0)
+
+    i = -1
+    while len(np.nonzero(edges[i])[0]) == 0:
+        edges = np.delete(edges, i, 0)
+
+    result = [[]]
+    for yPixel in range(len(edges)):
+        for xPixel in range(len(edges[yPixel])):
+            if edges[yPixel][xPixel] > 0:
+                result[-1].append(True)
+            else:
+                result[-1].append(False)
+        result.append([])
+        # print()
+    result.pop()
+
+    return im, result
+    # for row in result:
+    #     for col in row:
+    #         print('*' if col else '-', end='')
+    #     print()
+
 
 result = [[]]
 for yPixel in range(len(edges)):
