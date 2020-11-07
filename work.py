@@ -38,13 +38,13 @@ def onUpload(app):
     calculateLineSpeed(app)
     app.concatenatedMidi = concatenatedMidi(app)
     app.uploaded = True
-    print(app.currentMidi)
+    print(len(app.concatenatedMidi))
 
 
 def calculateLineSpeed(app):
     pixelsPerBeat = len(app.L[0])/(app.numBeats)
     pixelsPerMilisecond = ((app.tempo/60)/1000) * pixelsPerBeat
-    app.lineSpeed = 7*app.timerDelay * pixelsPerMilisecond
+    app.lineSpeed = 3*app.timerDelay * pixelsPerMilisecond
  
 #from course website
 def rgbColorString(r, g, b):
@@ -92,7 +92,7 @@ def pixelToMidi(app):
                 chordProgressionIndex -= 1
             note = rowNumToMidiNoteNum(app, row)
             box = midiRectangles[row][col]
-            box[2] = (midiRectangleIntersect(app, box[0], box[1])) and ((96  + 24 - note) in getNotesInChord(app, app.chordProgression[chordProgressionIndex]))
+            box[2] = (midiRectangleIntersect(app, box[0], box[1])) and ((96 + 24*2 - note) in getNotesInChord(app, app.chordProgression[chordProgressionIndex]))
         chordProgressionIndex = 0
     return midiRectangles
 
