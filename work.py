@@ -2,15 +2,16 @@ from cmu_112_graphics import *
 from image import fetchTestImage
 from midiutil import MIDIFile
 from midi2audio import FluidSynth
+import _thread as thread
 
 
 def appStarted(app):
     app.L = fetchTestImage()[1]
     app.tonic = "B"
-    app.tonality = "Minor"
+    app.tonality = "Major"
     app.tempo = 20
     app.numBeats = 4
-    app.chordProgression = ["V", "i", "III+", "iv", "V", "i"]
+    app.chordProgression = ["I", "vi", "V", "IV", "ii", "viio", "I"]
     app.tonicRow = findTonicRow(app)
     app.rectangleHeight =  int(len(app.L)/96)
     app.standardRectangleWidth = int(app.width/100)
@@ -19,8 +20,7 @@ def appStarted(app):
     app.minorChordDict = {"i":[3, 4, 5, 0], "ii0":[3, 3, 6, 2], "III+":[4, 4, 4, 3], "iv":[3, 4, 5, 5], "V":[4, 3, 5, 7], "VI":[4, 3, 5, 8], "viio":[3, 3, 6, 11]}
     app.currentMidi = pixelToMidi(app)
     createMidiFile(app)
-    createMidiToTestHowWeThinkThisShitWorks(app)
-    playMidi(app)
+    thread.start_new_thread(playMidi, (app, 0))
  
 
 
@@ -93,7 +93,7 @@ def rowNumToMidiNoteNum(app, rowNum):
     note = 12*octave + pitch
     return note - 12
 
-def playMidi(app):
+def playMidi(app, bogus):
     FluidSynth().play_midi('ourMidi.mid')
     print("played midi")
 
