@@ -7,6 +7,8 @@ from matplotlib import pyplot as plt
 import numpy as np
 from colortemp import tempFromRGB
 import colorsys
+import tkinter as tk
+from tkinter import filedialog
 
 # imgray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
 # # ret, thresh = cv2.threshold(imgray, 50, 255, 0)
@@ -27,8 +29,9 @@ import colorsys
 
 # https://docs.opencv.org/4.5.0/d4/d73/tutorial_py_contours_begin.html
 
-def fetchTestImage():
-    im = cv2.imread('test.jpg')
+def getUserImage():
+    filename = filedialog.askopenfile()
+    im = cv2.imread(filename.name)
 
     new_width = 400
     height = int(new_width / im.shape[1] * im.shape[0])
@@ -52,7 +55,7 @@ def fetchTestImage():
     plt.subplot(121), plt.imshow(blurred, cmap='gray')
     plt.subplot(122), plt.imshow(edges, cmap='gray')
     plt.title('Edge Image'), plt.xticks([]), plt.yticks([])
-    plt.show()
+    # plt.show()
 
     i = 0
     while len(np.nonzero(edges[i])[0]) == 0:
@@ -150,8 +153,8 @@ def fetchTestImage():
     print(chords)
     print(f'W: {averageWarmth}\tH: {averageHue}\tL: {averageLuminance}\tS: {averageSaturation}')
 
-    cv2.imshow('test', im)
-    cv2.waitKey(0)
+    # cv2.imshow('test', im)
+    # cv2.waitKey(0)
 
     return {
         'image': im,
@@ -166,7 +169,7 @@ def fetchTestImage():
     #         print('*' if col else '-', end='')
     #     print()
 
-fetchTestImage()
+getUserImage()
 
 # plt.subplot(121),plt.imshow(im,cmap = 'gray')
 # plt.title('Original Image'), plt.xticks([]), plt.yticks([])
