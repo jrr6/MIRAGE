@@ -27,7 +27,7 @@ import threading
 
 # https://docs.opencv.org/4.5.0/d4/d73/tutorial_py_contours_begin.html
 
-def getImageData(image_path):
+def getImageData(image_path, updaterFunc):
     im = cv2.imread(image_path)
 
     new_width = 400
@@ -97,6 +97,7 @@ def getImageData(image_path):
             hlsPartitions[partitionNumber] += np.array(hls + (1,))
             # print(f'{r}, {g}, {b} => {tempFromRGB(r, g, b)}')
             # print(totalWarmth / totalCount)
+        updaterFunc(x / w)
 
     for entry in hlsPartitions:
         entry /= entry[3]

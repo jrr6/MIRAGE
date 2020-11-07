@@ -1,8 +1,9 @@
+from PIL import ImageTk, Image
 from cmu_112_graphics import *
 from image_analyzer import getImageData
 from midiutil import MIDIFile
 from midi2audio import FluidSynth
-import _thread as thread
+from threading import Thread
 import time
 
 
@@ -14,16 +15,22 @@ def appStarted(app):
     app.moveLine = False
     app.tonicDict = {"C":24, "C#":25, "D":26, "D#":27, "E":28, "F":29, "F#":30, "G":31, "G#":32, "A":33, "A#":34, "B":35}
     app.majorChordDict = {"I":[4, 3, 5, 0], "i":[3, 4, 5, 0], "iio":[3, 3, 6, 2],"ii":[3, 4, 5, 2], "II":[4, 3, 5, 2], "III+":[4, 4, 4, 4],"iii":[3, 4, 5, 4], "III":[5, 4, 5, 4], "IV":[4, 3, 5, 5], "iv":[3, 4, 5, 5], "V":[4, 3, 5, 7], "v":[3, 4, 5, 7], "vi":[3, 4, 5, 9], "VI":[4, 3, 5, 9], "viio":[3, 3, 6, 11], "IM7":{4, 3, 4, 1, 0}, "Im7":{3, 4, 3, 2, 0}, "IMm7":[4, 3, 3, 2, 0], "IIM7":{4, 3, 4, 1, 2}, "IIm7":{3, 4, 3, 2, 2}, "IIMm7":[4, 3, 3, 2, 2], "IIIM7":{4, 3, 4, 1, 4}, "IIIm7":{3, 4, 3, 2, 4}, "IIIMm7":[4, 3, 3, 2, 4], "IVM7":{4, 3, 4, 1, 5}, "IVm7":{3, 4, 3, 2, 5}, "IVMm7":[4, 3, 3, 2, 5], "VM7":{4, 3, 4, 1, 7}, "Vm7":{3, 4, 3, 2, 7}, "VMm7":[4, 3, 3, 2, 7], "VIM7":{4, 3, 4, 1, 9}, "VIm7":{3, 4, 3, 2, 9}, "VIMm7":[4, 3, 3, 2, 9] ,  "VIIM7":{4, 3, 4, 1, 11}, "VIIm7":{3, 4, 3, 2, 11}, "VIIMm7":[4, 3, 3, 2, 11]}
-    app.minorChordDict = {"i":[3, 4, 5, 0],"I":[4, 3, 5, 0], "iio":[3, 3, 6, 2], "II":[4, 3, 5, 2], "ii":[3, 4, 5, 2],"III+":[4, 4, 4, 3], "iii":[3, 4, 5, 3], "III":[4, 3, 5, 3],"iv":[3, 4, 5, 5],"IV":[4, 3, 5, 5], "V":[4, 3, 5, 7],"v":[3, 4, 5, 7], "VI":[4, 3, 5, 8], "vi":[3, 4, 5, 8], "viio":[3, 3, 6, 11],"IM7":{4, 3, 4, 1, 0}, "Im7":{3, 4, 3, 2, 0}, "IMm7":[4, 3, 3, 2, 0], "IIM7":{4, 3, 4, 1, 2}, "IIm7":{3, 4, 3, 2, 2}, "IIMm7":[4, 3, 3, 2, 2], "IIIM7":{4, 3, 4, 1, 3}, "IIIm7":{3, 4, 3, 2, 3}, "IIIMm7":[4, 3, 3, 2, 3], "IVM7":{4, 3, 4, 1, 5}, "IVm7":{3, 4, 3, 2, 5}, "IVMm7":[4, 3, 3, 2, 5], "VM7":{4, 3, 4, 1, 7}, "Vm7":{3, 4, 3, 2, 7}, "VMm7":[4, 3, 3, 2, 7], "VIM7":{4, 3, 4, 1, 8}, "VIm7":{3, 4, 3, 2, 8}, "VIMm7":[4, 3, 3, 2, 8] ,  "VIIM7":{4, 3, 4, 1, 10}, "VIIm7":{3, 4, 3, 2, 10}, "VIIMm7":[4, 3, 3, 2, 10]} #fuck the linter
+    app.minorChordDict = {"i":[3, 4, 5, 0],"I":[4, 3, 5, 0], "iio":[3, 3, 6, 2], "II":[4, 3, 5, 2], "ii":[3, 4, 5, 2],"III+":[4, 4, 4, 3], "iii":[3, 4, 5, 3], "III":[4, 3, 5, 3],"iv":[3, 4, 5, 5],"IV":[4, 3, 5, 5], "V":[4, 3, 5, 7],"v":[3, 4, 5, 7], "VI":[4, 3, 5, 8], "vi":[3, 4, 5, 8], "viio":[3, 3, 6, 11],"IM7":{4, 3, 4, 1, 0}, "Im7":{3, 4, 3, 2, 0}, "IMm7":[4, 3, 3, 2, 0], "IIM7":{4, 3, 4, 1, 2}, "IIm7":{3, 4, 3, 2, 2}, "IIMm7":[4, 3, 3, 2, 2], "IIIM7":{4, 3, 4, 1, 3}, "IIIm7":{3, 4, 3, 2, 3}, "IIIMm7":[4, 3, 3, 2, 3], "IVM7":{4, 3, 4, 1, 5}, "IVm7":{3, 4, 3, 2, 5}, "IVMm7":[4, 3, 3, 2, 5], "VM7":{4, 3, 4, 1, 7}, "Vm7":{3, 4, 3, 2, 7}, "VMm7":[4, 3, 3, 2, 7], "VIM7":{4, 3, 4, 1, 8}, "VIm7":{3, 4, 3, 2, 8}, "VIMm7":[4, 3, 3, 2, 8] ,  "VIIM7":{4, 3, 4, 1, 10}, "VIIm7":{3, 4, 3, 2, 10}, "VIIMm7":[4, 3, 3, 2, 10]}
     app.topMargin = app.height/5
     app.mouseOverPlayButton = False
     app.isPlayingAudio = False
     app.uploaded = False
-
+    app.loading = False
+    app.loadingPercent = 0
 
 def onUpload(app):
     filename = filedialog.askopenfile()
-    data = getImageData(filename.name)
+    loaderThread = Thread(target=doImageProc, args=(app, filename.name))
+    loaderThread.start()
+    app.loading = True
+
+def doImageProc(app, name):
+    data = getImageData(name, updateLoader(app))
     app.L = data['edges']
     app.sideMargin = (app.width - len(app.L[0])) / 2
     app.tonic = data['tonic']
@@ -38,8 +45,13 @@ def onUpload(app):
     calculateLineSpeed(app)
     app.concatenatedMidi = concatenatedMidi(app)
     app.uploaded = True
-    print(len(app.concatenatedMidi))
+    app.loading = False
 
+# CURRYING! YAY!
+def updateLoader(app):
+    def func(value):
+        app.loadingPercent = value
+    return func
 
 def calculateLineSpeed(app):
     pixelsPerBeat = len(app.L[0])/(app.numBeats)
@@ -60,8 +72,9 @@ def mousePressed(app, event):
     if not app.isPlayingAudio and app.uploaded and isPositionInsidePlayButton(app, event.x, event.y):
         app.isPlayingAudio = True
         app.beginTime = time.time()
-        thread.start_new_thread(playMidi, (app, 0))
-    if not app.uploaded and isPositionInsideUploadButton(app, event.x, event.y):
+        playThread = Thread(target=playMidi, args=(app, 0))
+        playThread.start()
+    if not app.uploaded and not app.loading and isPositionInsideUploadButton(app, event.x, event.y):
         onUpload(app)
 
 def timerFired(app):
@@ -231,9 +244,13 @@ def createMidiFile(app):
 
 def drawMidi(canvas, app):
     extent = 7
+
     canvas.create_rectangle(0, 0, app.width, app.height, fill = rgbColorString(50, 50, 50))
     canvas.create_rectangle(0, app.topMargin - extent, app.width, app.topMargin + len(app.L) + extent, fill = "black")
-    
+
+    img = ImageTk.PhotoImage(Image.open('logo_dark.jpg'))
+    canvas.create_image((app.width // 2, app.height // 2 + 300), image=img)
+
     for row in range(len(app.currentMidi)):
         for box in app.currentMidi[row]:
             if not box[2]:
@@ -244,11 +261,25 @@ def drawMidi(canvas, app):
 
 def drawUploader(app, canvas):
     buttonWidth = 100
-    canvas.create_rectangle(app.width // 2 - buttonWidth,
-                            app.height // 2 - buttonWidth / 2,
-                            app.width // 2 + buttonWidth,
-                            app.height // 2 + buttonWidth / 2, fill='blue')
-    canvas.create_text(app.width // 2, app.height // 2, text='Upload Image', font='Helvetica 16 bold', fill='white')
+    img = ImageTk.PhotoImage(Image.open('logo.jpg'))
+    canvas.create_image((app.width // 2, app.height // 2 - 200), image=img)
+    if not app.loading:
+        canvas.create_rectangle(app.width // 2 - buttonWidth,
+                                app.height // 2 - buttonWidth / 2,
+                                app.width // 2 + buttonWidth,
+                                app.height // 2 + buttonWidth / 2, fill='blue')
+        canvas.create_text(app.width // 2, app.height // 2, text='Upload Image', font='Helvetica 16 bold', fill='white')
+    else:
+        img = ImageTk.PhotoImage(Image.open('logo.jpg'))
+        canvas.create_image((app.width // 2, app.height // 2 - 200), image=img)
+        # loading bar outline
+        canvas.create_rectangle(app.width // 2 - 201, app.height // 2 - 52, app.width // 2 + 201, app.height // 2 + 52, outline='black', width=3)
+        quantity = -200 + app.loadingPercent * 400
+        canvas.create_rectangle(app.width // 2 - 200, app.height // 2 - 50,
+                                app.width // 2 + quantity, app.height // 2 + 50,
+                                fill='lightgreen', outline='white', width=0)
+        # canvas.create_text(app.width // 2, app.height // 2 + 300, text='Processing...', font='Helvetica 16 bold')
+
 
 def redrawAll(app, canvas):
     if not app.uploaded:
@@ -267,7 +298,8 @@ def keyPressed(app, event):
     if event.key == "Space" and not app.isPlayingAudio:
         app.isPlayingAudio = True
         app.beginTime = time.time()
-        thread.start_new_thread(playMidi, (app, 0))
+        playThread = Thread(playMidi, (app, 0))
+        playThread.start()
 
 
 
