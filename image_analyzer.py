@@ -29,7 +29,7 @@ from tkinter import filedialog
 
 # https://docs.opencv.org/4.5.0/d4/d73/tutorial_py_contours_begin.html
 
-def getUserImage():
+def getImageData():
     filename = filedialog.askopenfile()
     im = cv2.imread(filename.name)
 
@@ -169,7 +169,7 @@ def getUserImage():
     #         print('*' if col else '-', end='')
     #     print()
 
-getUserImage()
+# getImageData()
 
 # plt.subplot(121),plt.imshow(im,cmap = 'gray')
 # plt.title('Original Image'), plt.xticks([]), plt.yticks([])
