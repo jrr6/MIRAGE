@@ -46,7 +46,7 @@ def doImageProc(app, name):
     app.concatenatedMidi = concatenatedMidi(app)
     app.uploaded = True
     app.loading = False
-    app.totalPieceTime = (app.numBeats / app.tempo) * 30
+    app.totalPieceTime = (app.numBeats / app.tempo) * 60
 
 # CURRYING! YAY!
 def updateLoader(app):
@@ -81,9 +81,8 @@ def mousePressed(app, event):
 def timerFired(app):
     if app.isPlayingAudio:
         elapsedTime = time.time() - app.beginTime
-        app.lineX = (elapsedTime / (app.totalPieceTime)) * (
-            len(app.L)) + app.sideMargin
-        if app.lineX >= (len(app.L)) + 2 * app.sideMargin:
+        app.lineX = (elapsedTime / (app.totalPieceTime)) * (len(app.L[0])) + app.sideMargin
+        if app.lineX >= (len(app.L[0])) +  app.sideMargin:
             app.lineX = 0
             app.isPlayingAudio = False
 
