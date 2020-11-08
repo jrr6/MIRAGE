@@ -50,10 +50,10 @@ def getImageData(image_path, updaterFunc):
 
     # edges = cv2.Canny(blurred, 200, 300)
 
-    plt.subplot(121), plt.imshow(blurred, cmap='gray')
-    plt.subplot(122), plt.imshow(edges, cmap='gray')
-    plt.title('Edge Image'), plt.xticks([]), plt.yticks([])
-    plt.show()
+    # plt.subplot(121), plt.imshow(blurred, cmap='gray')
+    # plt.subplot(122), plt.imshow(edges, cmap='gray')
+    # plt.title('Edge Image'), plt.xticks([]), plt.yticks([])
+    # plt.show()
 
     i = 0
     while len(np.nonzero(edges[i])[0]) == 0:

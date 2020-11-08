@@ -267,8 +267,10 @@ def drawUploader(app, canvas):
         canvas.create_rectangle(app.width // 2 - buttonWidth,
                                 app.height // 2 - buttonWidth / 2,
                                 app.width // 2 + buttonWidth,
-                                app.height // 2 + buttonWidth / 2, fill='blue')
-        canvas.create_text(app.width // 2, app.height // 2, text='Upload Image', font='Helvetica 16 bold', fill='white')
+                                app.height // 2 + buttonWidth / 2, fill='lightgreen')
+        canvas.create_text(app.width // 2, app.height // 2, text='Select Image', font='Helvetica 16 bold', fill='white')
+        canvas.create_text(app.width // 2, app.height // 2 + 200, text='Created by Cameron Chiu, Joseph Rotella, Matthew Suh, and Zack Sussman',
+                           font='Helvetica 12 bold', fill='black')
     else:
         img = ImageTk.PhotoImage(Image.open('logo.jpg'))
         canvas.create_image((app.width // 2, app.height // 2 - 200), image=img)
