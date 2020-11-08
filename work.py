@@ -32,7 +32,7 @@ def onUpload(app):
 def doImageProc(app, name):
     data = getImageData(name, updateLoader(app))
     app.L = data['edges']
-    app.sideMargin = (app.width - len(app.L[0])) / 2
+    app.sideMargin = int((app.width - len(app.L[0])) / 2)
     app.tonic = data['tonic']
     app.tonality = "Major" if data['major'] else "Minor"
     app.tempo = data['tempo']
@@ -46,6 +46,7 @@ def doImageProc(app, name):
     app.concatenatedMidi = concatenatedMidi(app)
     app.uploaded = True
     app.loading = False
+    app.totalPieceTime = (app.numBeats / app.tempo) * 30
 
 # CURRYING! YAY!
 def updateLoader(app):
@@ -56,7 +57,7 @@ def updateLoader(app):
 def calculateLineSpeed(app):
     pixelsPerBeat = len(app.L[0])/(app.numBeats)
     pixelsPerMilisecond = ((app.tempo/60)/1000) * pixelsPerBeat
-    app.lineSpeed = 3*app.timerDelay * pixelsPerMilisecond
+    app.lineSpeed = 4*app.timerDelay * pixelsPerMilisecond
  
 #from course website
 def rgbColorString(r, g, b):
@@ -79,8 +80,10 @@ def mousePressed(app, event):
 
 def timerFired(app):
     if app.isPlayingAudio:
-        app.lineX += app.lineSpeed
-        if app.lineX > app.sideMargin + len(app.L):
+        elapsedTime = time.time() - app.beginTime
+        app.lineX = (elapsedTime / (app.totalPieceTime)) * (
+            len(app.L)) + app.sideMargin
+        if app.lineX >= (len(app.L)) + 2 * app.sideMargin:
             app.lineX = 0
             app.isPlayingAudio = False
 
@@ -296,7 +299,8 @@ def redrawAll(app, canvas):
         drawTriangleAbovePlayButton(app, canvas)
 
 def drawLine(app, canvas):
-    canvas.create_line(app.lineX + app.sideMargin, app.topMargin, app.lineX + app.sideMargin, len(app.L) + app.topMargin, fill = "red", width = 2)
+    canvas.create_line(app.lineX, app.topMargin, app.lineX,
+                       len(app.L) + app.topMargin, fill="red", width=2)
 
 def keyPressed(app, event):
     if event.key == "Space" and not app.isPlayingAudio:

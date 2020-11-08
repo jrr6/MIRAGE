@@ -7,6 +7,8 @@ Created by Cameron Chiu, Joseph Rotella, Matthew Suh, and Zack Sussman
 
 ### Project Description
 
+See here: https://docs.google.com/document/d/1vAp0hvIu12kRFYWOfsTkIwBrCRu7wVZqK4uBAhG6XOc/edit?usp=sharing
+
 ### Third-Party Modules
 
 The following modules must be installed in order to run MIRAGE:
