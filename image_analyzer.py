@@ -112,9 +112,16 @@ def getImageData(image_path, updaterFunc):
     tonics = ['G#', 'D#', 'A#', 'F', 'C', 'G', 'D', 'A', 'E', 'B', 'C#']
     tonic = tonics[round(averageHue * 10)]
 
+    # regular
     tonicOpts = ["I", "VI", "III+", "i", "vi", "iii"]
     predominantOpts = ["IV", "iv", "iio"]
     dominantOpts = ["V", "viio"]
+
+    # 7ths
+    startOpts7th = ["IM7", "Im7", "IIIm7"]
+    predomOpts7th = ["IIm7", "VIm7"]
+    domOpts7th = ["IIm7", "VMm7", "VIIMm7"]
+    endOpts7th = ["IM7", "Im7", "VMm7", "VIMm7"]
 
     chords = []
 
@@ -125,19 +132,30 @@ def getImageData(image_path, updaterFunc):
         saturation = partition[2]
         warmth = partition[3]
         if chord == 0:
-            tonicIdx = round(hue * 2)
-            if not isMajor: tonicIdx += 3
-            chords.append(tonicOpts[tonicIdx])
+            if warmth > 0.5:
+                chords.append('IM7')
+            else:
+                tonicIdx = round(hue * 2)
+                if not isMajor: tonicIdx += 3
+                chords.append(tonicOpts[tonicIdx])
         elif chord == 1:
-            if luminance > 0.7 and saturation < 0.3:  # foggy/gray = jazzy
-                chords.append('iio')
+            if luminance > 0.5 and saturation < 0.35:  # foggy/gray = jazzy
+                if warmth > 0.5:
+                    chords.append('IIm7')
+                else:
+                    chords.append('iio')
             elif isMajor:
                 chords.append('IV')
             else:
                 chords.append('iv')
         elif chord == 2:
-            if saturation > 0.6 and luminance < 0.3:  # dark + intense = viio
-                chords.append('viio')
+            if saturation > 0.5 and luminance < 0.35:  # dark + intense = viio
+                if warmth > 0.7:
+                    chords.append('VIIMm7')
+                elif warmth > 0.5:
+                    chords.append('VMm7')
+                else:
+                    chords.append('viio')
             else:
                 chords.append('V')
         else:
@@ -145,10 +163,13 @@ def getImageData(image_path, updaterFunc):
             if similarityToFirst[0] < 0.2:
                 chords.append(chords[0])
             else:
-                start = 0 if isMajor else 3
-                resolutionOptions = tonicOpts[start:start + 2]
-                differentOpt = list(set(resolutionOptions) - set(chords[0]))[0]
-                chords.append(differentOpt)
+                if chords[0] == 'IM7':
+                    chords.append('VIMm7')
+                else:
+                    start = 0 if isMajor else 3
+                    resolutionOptions = tonicOpts[start:start + 2]
+                    differentOpt = list(set(resolutionOptions) - set(chords[0]))[0]
+                    chords.append(differentOpt)
 
     print(chords)
     print(f'W: {averageWarmth}\tH: {averageHue}\tL: {averageLuminance}\tS: {averageSaturation}')
