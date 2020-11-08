@@ -1,11 +1,9 @@
 import numpy as np
 import cv2
-from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
 import numpy as np
 from colortemp import tempFromRGB
 import colorsys
-from tkinter import filedialog
-import threading
 
 
 # imgray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
@@ -81,26 +79,28 @@ def getImageData(image_path, updaterFunc):
 
     totalWarmth = 0
     totalHLS = np.array([0.0, 0.0, 0.0])
-    hlsPartitions = np.zeros((4, 4))  # h, l, s, count
+    hlswPartitions = np.zeros((4, 5))  # h, l, s, count
     totalCount = 0
 
     # loop over the image, pixel by pixel
     for x in range(0, w):
         for y in range(0, h):
             b, g, r = im[y, x]
-            totalWarmth += min(tempFromRGB(r, g, b), 10000)
+            temp = min(tempFromRGB(r, g, b), 10000)
+            totalWarmth += temp
             hls = colorsys.rgb_to_hls(r / 255, g / 255, b / 255)
             totalHLS += hls
             totalCount += 1
 
             partitionNumber = x // chordPartitionSize
-            hlsPartitions[partitionNumber] += np.array(hls + (1,))
+            hlswPartitions[partitionNumber] += np.array(hls + (temp, 1))
             # print(f'{r}, {g}, {b} => {tempFromRGB(r, g, b)}')
             # print(totalWarmth / totalCount)
         updaterFunc(x / w)
 
-    for entry in hlsPartitions:
-        entry /= entry[3]
+    for entry in hlswPartitions:
+        entry /= entry[4]
+        entry[3] = 1 - entry[3] / 10000
 
     averageWarmth = (1 - totalWarmth / totalCount / 10000)      # -> tempo, tonality
     averageHue = totalHLS[0] / totalCount                       # -> tonality
@@ -118,11 +118,12 @@ def getImageData(image_path, updaterFunc):
 
     chords = []
 
-    for chord in range(len(hlsPartitions)):
-        partition = hlsPartitions[chord]
+    for chord in range(len(hlswPartitions)):
+        partition = hlswPartitions[chord]
         hue = partition[0]
         luminance = partition[1]
         saturation = partition[2]
+        warmth = partition[3]
         if chord == 0:
             tonicIdx = round(hue * 2)
             if not isMajor: tonicIdx += 3
@@ -140,7 +141,7 @@ def getImageData(image_path, updaterFunc):
             else:
                 chords.append('V')
         else:
-            similarityToFirst = np.abs(partition - hlsPartitions[0])
+            similarityToFirst = np.abs(partition - hlswPartitions[0])
             if similarityToFirst[0] < 0.2:
                 chords.append(chords[0])
             else:

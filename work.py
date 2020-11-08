@@ -137,6 +137,8 @@ def drawPlayButton(app, canvas):
     if app.isPlayingAudio:
         color = "gray"
     canvas.create_rectangle(topLeftX, topLeftY, bottomRightX, bottomRightY, fill = color)
+    # canvas.create_rectangle(topLeftX + halfWidth*3, topLeftY, bottomRightX + halfWidth*3, bottomRightY, fill='red')
+    # canvas.create_text(topLeftX + halfWidth*4, (topLeftY + bottomRightY) // 2, text='Reset', font='Helvetica 12 bold', fill='white')
 
 
 def drawTriangleAbovePlayButton(app, canvas):
@@ -302,6 +304,8 @@ def keyPressed(app, event):
         app.beginTime = time.time()
         playThread = Thread(playMidi, (app, 0))
         playThread.start()
+    elif event.key == 'r' and app.uploaded:
+        appStarted(app)
 
 
 
